@@ -1,179 +1,200 @@
-﻿// 路径：OBSAudioVideoDeduplication/MainWindow.xaml.cs
-using OBSAudioVideoDeduplication.Helpers;
-using OBSAudioVideoDeduplication.Models;
-using Serilog;
-using System;
+﻿using System;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Text.Json;
 
 namespace OBSAudioVideoDeduplication
 {
-    /// <summary>
-    /// MainWindow.xaml 的交互逻辑
-    /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ILogger _logger;
-        private readonly AppConfig _appConfig;
+        private ClientWebSocket _ws = new ClientWebSocket();
+        private Timer? _heartbeatTimer;
+        private bool _connected;
+        private CancellationTokenSource? _listenCts;
 
         public MainWindow()
         {
             InitializeComponent();
-            // 初始化日志和配置
-            _appConfig = ConfigHelper.AppConfig;
-            _logger = LogHelper.GetLogger("MainWindow");
+            ResetUI();
+        }
 
-            // 加载配置到UI
-            LoadConfigToUI();
-
-            // 绑定按钮事件
-            BtnConnectOBS.Click += BtnConnectOBS_Click;
-            BtnDisconnectOBS.Click += BtnDisconnectOBS_Click;
-            BtnInstallVST.Click += BtnInstallVST_Click;
-            BtnInstallVirtualAudio.Click += BtnInstallVirtualAudio_Click;
-            BtnInstallTemplate.Click += BtnInstallTemplate_Click;
-
-            // 实时日志输出到文本框
-            var logTimer = new System.Windows.Threading.DispatcherTimer
+        // 连接 OBS
+        private async void BtnConnectOBS_Click(object sender, RoutedEventArgs e)
+        {
+            // 立即锁按钮
+            Dispatcher.Invoke(() =>
             {
-                Interval = TimeSpan.FromSeconds(1)
-            };
-            logTimer.Tick += (s, e) =>
+                BtnConnectOBS.IsEnabled = false;
+                BtnConnectOBS.Foreground = Brushes.Gray;
+                UpdateStatus("连接中...", Brushes.Orange);
+                AppendLog("▶ 开始连接 OBS...");
+            });
+
+            try
             {
-                try
+                string ip = TxtOBSIp.Text.Trim();
+                string portStr = TxtOBSPort.Text.Trim();
+                string pwd = PwdOBSPassword.Password;
+
+                if (!int.TryParse(portStr, out int port) || string.IsNullOrEmpty(ip))
                 {
-                    // 读取最新日志（取最后20行）
-                    var logFilePath = System.IO.Path.Combine(_appConfig.LogFilePath, $"obs-deduplication-{DateTime.Now:yyyyMMdd}.log");
-                    if (System.IO.File.Exists(logFilePath))
+                    AppendLog("❌ IP / 端口无效");
+                    Dispatcher.Invoke(ResetUI);
+                    return;
+                }
+
+                // 关闭旧连接
+                await DisconnectInternal();
+
+                _ws = new ClientWebSocket();
+                _listenCts = new CancellationTokenSource();
+
+                // 连接
+                await _ws.ConnectAsync(new Uri($"ws://{ip}:{port}"), CancellationToken.None);
+
+                // OBS V5 认证
+                var auth = new
+                {
+                    op = 1,
+                    d = new
                     {
-                        var lines = System.IO.File.ReadAllLines(logFilePath);
-                        var lastLines = lines.Length > 20 ? lines[^20..] : lines;
-                        TxtLog.Text = string.Join(Environment.NewLine, lastLines);
-                        // 滚动到最后一行
-                        TxtLog.ScrollToEnd();
+                        rpcVersion = 1,
+                        authentication = pwd,
+                        eventSubscriptions = 63
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, "更新日志面板失败");
-                }
-            };
-            logTimer.Start();
+                };
+                await SendJson(auth);
 
-            _logger.Information("主窗口初始化完成");
-        }
-
-        /// <summary>
-        /// 加载配置到UI控件
-        /// </summary>
-        private void LoadConfigToUI()
-        {
-            try
-            {
-                TxtOBSIp.Text = _appConfig.OBSWebSocketIp;
-                TxtOBSPort.Text = _appConfig.OBSWebSocketPort.ToString();
-                _logger.Information("配置已加载到UI");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "加载配置到UI失败");
-                MessageBox.Show("加载配置失败，使用默认值", "提示", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
-        /// <summary>
-        /// 保存UI配置到配置文件
-        /// </summary>
-        private void SaveConfigFromUI()
-        {
-            try
-            {
-                _appConfig.OBSWebSocketIp = TxtOBSIp.Text;
-                if (int.TryParse(TxtOBSPort.Text, out var port))
-                {
-                    _appConfig.OBSWebSocketPort = port;
-                }
-                ConfigHelper.SaveConfig(_appConfig);
-                _logger.Information("UI配置已保存");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "保存UI配置失败");
-                MessageBox.Show("保存配置失败", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        #region 按钮事件
-        /// <summary>
-        /// 连接OBS按钮（阶段2实现逻辑，当前仅占位）
-        /// </summary>
-        private void BtnConnectOBS_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.Information("点击连接OBS按钮（阶段2实现），IP：{Ip}，端口：{Port}", TxtOBSIp.Text, TxtOBSPort.Text);
-            TxtOBSStatus.Text = "连接中...";
-            TxtOBSStatus.Foreground = Brushes.Orange;
-
-            // 模拟连接
-            System.Threading.Tasks.Task.Delay(1000).ContinueWith(t =>
-            {
+                // 连接成功
+                _connected = true;
                 Dispatcher.Invoke(() =>
                 {
-                    TxtOBSStatus.Text = "未实现（阶段2开发）";
-                    TxtOBSStatus.Foreground = Brushes.Yellow;
+                    UpdateStatus("已连接", Brushes.Green);
                     BtnConnectOBS.IsEnabled = false;
                     BtnDisconnectOBS.IsEnabled = true;
+                    AppendLog("✅ OBS 连接成功！");
                 });
+
+                // 启动心跳 + 监听消息
+                StartHeartbeat();
+                _ = ListenLoop(_listenCts.Token);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"❌ 连接失败：{ex.Message}");
+                Dispatcher.Invoke(ResetUI);
+            }
+        }
+
+        // 断开 OBS
+        private async void BtnDisconnectOBS_Click(object sender, RoutedEventArgs e)
+        {
+            await DisconnectInternal();
+            Dispatcher.Invoke(ResetUI);
+            AppendLog("✅ 已手动断开");
+        }
+
+        // 心跳保活（3秒一次，彻底解决OBS 5秒断开）
+        private void StartHeartbeat()
+        {
+            _heartbeatTimer?.Dispose();
+            _heartbeatTimer = new Timer(_ =>
+            {
+                if (_connected && _ws.State == WebSocketState.Open)
+                {
+                    var msg = new
+                    {
+                        op = 6,
+                        d = new { requestType = "GetVersion", requestId = Guid.NewGuid().ToString() }
+                    };
+                    _ = SendJson(msg);
+                }
+            }, null, 1000, 3000);
+        }
+
+        // 持续监听（必须，否则OBS强制断开）
+        private async Task ListenLoop(CancellationToken token)
+        {
+            byte[] buffer = new byte[8192];
+            try
+            {
+                while (_ws.State == WebSocketState.Open && !token.IsCancellationRequested)
+                {
+                    var res = await _ws.ReceiveAsync(new ArraySegment<byte>(buffer), token);
+
+                    if (res.MessageType == WebSocketMessageType.Close)
+                    {
+                        AppendLog("❌ OBS 服务器断开了连接");
+                        await DisconnectInternal();
+                        Dispatcher.Invoke(ResetUI);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                await DisconnectInternal();
+                Dispatcher.Invoke(ResetUI);
+            }
+        }
+
+        // 发送JSON消息
+        private async Task SendJson(object obj)
+        {
+            if (_ws.State != WebSocketState.Open) return;
+            string json = JsonSerializer.Serialize(obj);
+            byte[] data = Encoding.UTF8.GetBytes(json);
+            await _ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
+        // 内部断开逻辑
+        private async Task DisconnectInternal()
+        {
+            _connected = false;
+            _heartbeatTimer?.Dispose();
+            _listenCts?.Cancel();
+
+            if (_ws.State == WebSocketState.Open)
+            {
+                await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "ClosedByClient", CancellationToken.None);
+            }
+        }
+
+        // 重置按钮和状态
+        private void ResetUI()
+        {
+            BtnConnectOBS.IsEnabled = true;
+            BtnConnectOBS.Foreground = Brushes.White;
+            BtnDisconnectOBS.IsEnabled = false;
+            UpdateStatus("未连接", Brushes.Red);
+        }
+
+        // 更新状态栏
+        private void UpdateStatus(string txt, Brush color)
+        {
+            TxtOBSStatus.Text = txt;
+            TxtOBSStatus.Foreground = color;
+        }
+
+        // 日志输出
+        private void AppendLog(string msg)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                TxtLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {msg}\r\n");
+                TxtLog.ScrollToEnd();
             });
         }
 
-        /// <summary>
-        /// 断开OBS按钮（阶段2实现逻辑，当前仅占位）
-        /// </summary>
-        private void BtnDisconnectOBS_Click(object sender, RoutedEventArgs e)
+        // 窗口关闭时清理
+        protected override async void OnClosed(EventArgs e)
         {
-            _logger.Information("点击断开OBS按钮（阶段2实现）");
-            TxtOBSStatus.Text = "未连接";
-            TxtOBSStatus.Foreground = Brushes.Red;
-            BtnConnectOBS.IsEnabled = true;
-            BtnDisconnectOBS.IsEnabled = false;
-        }
-
-        /// <summary>
-        /// 安装VST插件按钮（阶段3实现逻辑，当前仅占位）
-        /// </summary>
-        private void BtnInstallVST_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.Information("点击安装VST插件按钮（阶段3实现）");
-            MessageBox.Show("VST插件安装功能将在阶段3开发", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        /// <summary>
-        /// 安装虚拟声卡按钮（阶段3实现逻辑，当前仅占位）
-        /// </summary>
-        private void BtnInstallVirtualAudio_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.Information("点击安装虚拟声卡按钮（阶段3实现）");
-            MessageBox.Show("虚拟声卡安装功能将在阶段3开发", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        /// <summary>
-        /// 安装专业模板插件按钮（阶段3实现逻辑，当前仅占位）
-        /// </summary>
-        private void BtnInstallTemplate_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.Information("点击安装专业模板插件按钮（阶段3实现）");
-            MessageBox.Show("专业模板插件安装功能将在阶段3开发", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        #endregion
-
-        /// <summary>
-        /// 窗口关闭时保存配置
-        /// </summary>
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
-        {
-            SaveConfigFromUI();
-            _logger.Information("主窗口关闭，配置已保存");
-            base.OnClosing(e);
+            await DisconnectInternal();
+            base.OnClosed(e);
         }
     }
 }

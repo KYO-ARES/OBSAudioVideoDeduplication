@@ -9,7 +9,7 @@
         MinWidth="800" MinHeight="600"
         Width="1200" Height="800"
         WindowStartupLocation="CenterScreen"
-        Background="#F8F9FA">
+        Background="#F8F9FA" Cursor="">
     <!-- 全局样式 -->
     <Window.Resources>
         <!-- 按钮样式 -->
@@ -153,35 +153,23 @@
 
                                         <!-- IP地址 -->
                                         <TextBlock Grid.Column="0" Text="IP地址：" Style="{StaticResource LabelText}"/>
-                                        <TextBox Grid.Column="1" x:Name="TxtOBSIp" 
-                                                 Text="127.0.0.1" 
-                                                 Style="{StaticResource StyledInputBox}"
-                                                 Margin="0,0,15,0"/>
-
+                                        <TextBox Grid.Column="1" x:Name="TxtOBSIp" Text="127.0.0.1" Style="{StaticResource StyledInputBox}" Margin="0,0,15,0"/>
+                                   
                                         <!-- 端口号 -->
                                         <TextBlock Grid.Column="2" Text="端口：" Style="{StaticResource LabelText}"/>
-                                        <TextBox Grid.Column="3" x:Name="TxtOBSPort" 
-                                                 Text="445" 
-                                                 Style="{StaticResource StyledInputBox}"
-                                                 Margin="0,0,15,0"/>
+                                        <TextBox Grid.Column="3" x:Name="TxtOBSPort" Text="445" Style="{StaticResource StyledInputBox}" Margin="0,0,15,0"/>
 
                                         <!-- 密码 -->
                                         <TextBlock Grid.Column="4" Text="密码：" Style="{StaticResource LabelText}"/>
-                                        <PasswordBox Grid.Column="5" x:Name="PwdOBSPassword" 
-                                                     Style="{StaticResource StyledInputBox}"
-                                                     Margin="0,0,20,0"/>
+                                        <PasswordBox Grid.Column="5" x:Name="PwdOBSPassword" Style="{StaticResource StyledInputBox}" Margin="0,0,20,0"/>
 
                                         <!-- 连接/断开按钮 -->
-                                        <Button Grid.Column="6" x:Name="BtnConnectOBS" Content="连接OBS" Style="{StaticResource StyledButton}"/>
-                                        <Button Grid.Column="7" x:Name="BtnDisconnectOBS" Content="断开连接" Style="{StaticResource StyledButton}" IsEnabled="False"/>
+                                        <Button Grid.Column="6" x:Name="BtnConnectOBS" Content="连接OBS" Style="{StaticResource StyledButton}" Click="BtnConnectOBS_Click"/>
+                                        <Button Grid.Column="7" x:Name="BtnDisconnectOBS" Content="断开连接" Style="{StaticResource StyledButton}" IsEnabled="False" Click="BtnDisconnectOBS_Click"/>
 
                                         <!-- 连接状态（自适应剩余空间） -->
-                                        <TextBlock Grid.Column="8" x:Name="TxtOBSStatus" 
-                                                   Text="未连接" 
-                                                   FontSize="14" 
-                                                   Foreground="#DC3545"
-                                                   Margin="15,0,0,0"
-                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="8" x:Name="TxtOBSStatus" Text="未连接" FontSize="14" Foreground="#DC3545" Margin="15,0,0,0" VerticalAlignment="Center"/>
+
                                     </Grid>
                                 </Grid>
                             </Border>
@@ -248,17 +236,9 @@
                 <TextBlock Text="📜 运行日志" FontSize="14" FontWeight="Bold" Foreground="#212529"/>
                 <TextBlock Text="（实时显示程序运行状态）" FontSize="11" Foreground="#6C757D" Margin="8,3,0,0"/>
             </StackPanel>
-            <TextBox Grid.Row="1" x:Name="TxtLog" 
-                     Margin="15,5,15,10" 
-                     IsReadOnly="True" 
-                     VerticalScrollBarVisibility="Auto" 
-                     HorizontalScrollBarVisibility="Auto"
-                     FontFamily="Consolas" 
-                     FontSize="11" 
-                     Background="White" 
-                     BorderBrush="#DEE2E6" 
-                     BorderThickness="1"
-                     Padding="8"/>
+            <TextBox Grid.Row="1" x:Name="TxtLog" Margin="15,5,15,10" IsReadOnly="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas" FontSize="11" Background="White" BorderBrush="#DEE2E6" BorderThickness="1" Padding="8"/>
+       
         </Grid>
     </Grid>
 </Window>
