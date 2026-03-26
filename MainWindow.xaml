@@ -1,0 +1,264 @@
+﻿<!-- 路径：OBSAudioVideoDeduplication/MainWindow.xaml -->
+<Window x:Class="OBSAudioVideoDeduplication.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="OBS音视频AI实时去重 v1.0.0" 
+        MinWidth="800" MinHeight="600"
+        Width="1200" Height="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#F8F9FA">
+    <!-- 全局样式 -->
+    <Window.Resources>
+        <!-- 按钮样式 -->
+        <Style x:Key="StyledButton" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <!-- 按钮最小宽度 -->
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1976D2"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#90CAF9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- 输入框样式 -->
+        <Style x:Key="StyledInputBox" TargetType="Control">
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#CED4DA"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinWidth" Value="60"/>
+            <!-- 输入框最小宽度 -->
+            <Style.Triggers>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#2196F3"/>
+                    <Setter Property="BorderThickness" Value="1.5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- 面板样式 -->
+        <Style x:Key="PanelBorder" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#DEE2E6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="15"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" Opacity="0.1" ShadowDepth="2"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- 说明文本样式 -->
+        <Style x:Key="GuideText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,5,0,5"/>
+            <Setter Property="Foreground" Value="#212529"/>
+        </Style>
+        <!-- 标签文本样式 -->
+        <Style x:Key="LabelText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Foreground" Value="#212529"/>
+            <Setter Property="MinWidth" Value="40"/>
+            <!-- 标签最小宽度 -->
+        </Style>
+    </Window.Resources>
+
+    <!-- 核心Grid布局（支持自适应） -->
+    <Grid>
+        <!-- 顶部标题栏（固定高度，宽度自适应） -->
+        <Grid Height="70" VerticalAlignment="Top" Background="#2196F3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <!-- 自适应宽度 -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- 内容自适应 -->
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="25,0,0,0">
+                <TextBlock Text="🎬" FontSize="36" Margin="0,0,12,0"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="OBS音视频AI实时去重" FontSize="22" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="专业版 v1.0.0" FontSize="12" Foreground="#E3F2FD" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+            <!-- 右侧功能按钮（自适应换行） -->
+            <WrapPanel Orientation="Horizontal" Grid.Column="1" VerticalAlignment="Center" Margin="0,0,25,0">
+                <Button x:Name="BtnInstallVST" Content="安装VST插件" Style="{StaticResource StyledButton}" MinWidth="100"/>
+                <Button x:Name="BtnInstallVirtualAudio" Content="安装虚拟声卡" Style="{StaticResource StyledButton}" MinWidth="100"/>
+                <Button x:Name="BtnInstallTemplate" Content="安装专业模板" Style="{StaticResource StyledButton}" MinWidth="100"/>
+            </WrapPanel>
+        </Grid>
+
+        <!-- 主内容区（自适应高度/宽度） -->
+        <Grid Margin="0,70,0,90">
+            <TabControl x:Name="MainTabControl" FontSize="14" Padding="10">
+                <!-- 首页 -->
+                <TabItem Header="OBS连接配置" MinWidth="100">
+                    <!-- 滚动容器（避免内容溢出） -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                        <Grid>
+                            <!-- OBS连接面板（宽度自适应） -->
+                            <Border Style="{StaticResource PanelBorder}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 标题 -->
+                                    <TextBlock Grid.Row="0" 
+                                               Text="OBS WebSocket 连接配置" 
+                                               FontSize="18" FontWeight="Bold" 
+                                               Margin="0,0,0,25" Foreground="#212529"/>
+
+                                    <!-- 核心自适应布局：使用Grid替代StackPanel -->
+                                    <Grid Grid.Row="1" MinWidth="600">
+                                        <!-- 最小宽度限制 -->
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- IP标签 -->
+                                            <ColumnDefinition Width="1.5*"/>
+                                            <!-- IP输入框（比例分配） -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- 端口标签 -->
+                                            <ColumnDefinition Width="*"/>
+                                            <!-- 端口输入框（比例分配） -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- 密码标签 -->
+                                            <ColumnDefinition Width="2*"/>
+                                            <!-- 密码输入框（比例分配） -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- 连接按钮 -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- 断开按钮 -->
+                                            <ColumnDefinition Width="*"/>
+                                            <!-- 状态文本（剩余空间） -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- IP地址 -->
+                                        <TextBlock Grid.Column="0" Text="IP地址：" Style="{StaticResource LabelText}"/>
+                                        <TextBox Grid.Column="1" x:Name="TxtOBSIp" 
+                                                 Text="127.0.0.1" 
+                                                 Style="{StaticResource StyledInputBox}"
+                                                 Margin="0,0,15,0"/>
+
+                                        <!-- 端口号 -->
+                                        <TextBlock Grid.Column="2" Text="端口：" Style="{StaticResource LabelText}"/>
+                                        <TextBox Grid.Column="3" x:Name="TxtOBSPort" 
+                                                 Text="445" 
+                                                 Style="{StaticResource StyledInputBox}"
+                                                 Margin="0,0,15,0"/>
+
+                                        <!-- 密码 -->
+                                        <TextBlock Grid.Column="4" Text="密码：" Style="{StaticResource LabelText}"/>
+                                        <PasswordBox Grid.Column="5" x:Name="PwdOBSPassword" 
+                                                     Style="{StaticResource StyledInputBox}"
+                                                     Margin="0,0,20,0"/>
+
+                                        <!-- 连接/断开按钮 -->
+                                        <Button Grid.Column="6" x:Name="BtnConnectOBS" Content="连接OBS" Style="{StaticResource StyledButton}"/>
+                                        <Button Grid.Column="7" x:Name="BtnDisconnectOBS" Content="断开连接" Style="{StaticResource StyledButton}" IsEnabled="False"/>
+
+                                        <!-- 连接状态（自适应剩余空间） -->
+                                        <TextBlock Grid.Column="8" x:Name="TxtOBSStatus" 
+                                                   Text="未连接" 
+                                                   FontSize="14" 
+                                                   Foreground="#DC3545"
+                                                   Margin="15,0,0,0"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- 快速开始说明（宽度自适应） -->
+                            <Border Style="{StaticResource PanelBorder}" Margin="15,120,15,15">
+                                <Grid>
+                                    <TextBlock Text="📖 快速开始指南" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" Foreground="#212529"/>
+                                    <StackPanel Margin="0,40,0,0">
+                                        <TextBlock Text="1. 确保OBS已安装并启用WebSocket插件（工具 → 选项 → WebSocket）" Style="{StaticResource GuideText}"/>
+                                        <TextBlock Text="2. 填写OBS的IP地址、端口号和密码（若无密码则留空）" Style="{StaticResource GuideText}"/>
+                                        <TextBlock Text="3. 点击「连接OBS」按钮，成功后状态将显示「已连接」" Style="{StaticResource GuideText}"/>
+                                        <TextBlock Text="4. 安装虚拟声卡/VST插件后，可使用音视频去重功能" Style="{StaticResource GuideText}"/>
+                                        <TextBlock Text="5. 高阶功能需在对应标签页配置，详细教程请查看帮助文档" Style="{StaticResource GuideText}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- 其他标签页（统一自适应） -->
+                <TabItem Header="画面去重" MinWidth="80">
+                    <Grid>
+                        <Border Style="{StaticResource PanelBorder}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
+                            <TextBlock Text="画面去重功能开发中，敬请期待！" FontSize="18" Foreground="#495057" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="音频去重" MinWidth="80">
+                    <Grid>
+                        <Border Style="{StaticResource PanelBorder}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
+                            <TextBlock Text="音频去重功能开发中，敬请期待！" FontSize="18" Foreground="#495057" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="音频叠加播放" MinWidth="100">
+                    <Grid>
+                        <Border Style="{StaticResource PanelBorder}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
+                            <TextBlock Text="音频叠加播放功能开发中，敬请期待！" FontSize="18" Foreground="#495057" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="高阶播放器" MinWidth="100">
+                    <Grid>
+                        <Border Style="{StaticResource PanelBorder}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
+                            <TextBlock Text="高阶播放器功能开发中，敬请期待！" FontSize="18" Foreground="#495057" HorizontalAlignment="Center"/>
+                        </Border>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Grid>
+
+        <!-- 底部日志面板（固定高度，宽度自适应） -->
+        <Grid Height="90" VerticalAlignment="Bottom" Background="#E9ECEF">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="15,5,0,0">
+                <TextBlock Text="📜 运行日志" FontSize="14" FontWeight="Bold" Foreground="#212529"/>
+                <TextBlock Text="（实时显示程序运行状态）" FontSize="11" Foreground="#6C757D" Margin="8,3,0,0"/>
+            </StackPanel>
+            <TextBox Grid.Row="1" x:Name="TxtLog" 
+                     Margin="15,5,15,10" 
+                     IsReadOnly="True" 
+                     VerticalScrollBarVisibility="Auto" 
+                     HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas" 
+                     FontSize="11" 
+                     Background="White" 
+                     BorderBrush="#DEE2E6" 
+                     BorderThickness="1"
+                     Padding="8"/>
+        </Grid>
+    </Grid>
+</Window>
