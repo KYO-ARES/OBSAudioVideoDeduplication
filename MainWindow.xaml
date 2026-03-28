@@ -192,11 +192,27 @@
                 </TabItem>
 
                 <!-- 其他标签页（统一自适应） -->
-                <TabItem Header="画面去重" MinWidth="80">
-                    <Grid>
-                        <Border Style="{StaticResource PanelBorder}" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
-                            <TextBlock Text="画面去重功能开发中，敬请期待！" FontSize="18" Foreground="#495057" HorizontalAlignment="Center"/>
-                        </Border>
+                <TabItem Header="画面去重" x:Name="tabVideoDeduplication" GotFocus="tabVideoDeduplication_GotFocus">
+                    <Grid Margin="10">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" Margin="0 0 0 5">
+                                <Button x:Name="btnRefreshDeduplication" Content="刷新" Width="60" Click="BtnRefreshDeduplication_Click"/>
+                            </DockPanel>
+
+                            <TextBlock Text="选择场景" FontSize="14" Margin="0 5"/>
+                            <ComboBox x:Name="cboSceneList" Height="30" SelectionChanged="CboSceneList_SelectionChanged"/>
+
+                            <TextBlock Text="选择场景内媒体源" FontSize="14" Margin="0 10 0 5"/>
+                            <ComboBox x:Name="cboSceneSources" Height="30" SelectionChanged="CboSceneSources_SelectionChanged"/>
+
+                            <TextBlock Text="滤镜列表" FontSize="14" Margin="0 10 0 5"/>
+                            <ListBox x:Name="lstSourceFilters" Height="120" SelectionChanged="LstSourceFilters_SelectionChanged"/>
+
+                            <TextBlock Text="滤镜参数" FontSize="14" Margin="0 10 0 5"/>
+                            <ScrollViewer Height="240" Background="#FAFAFA">
+                                <StackPanel x:Name="panelFilterParams" Margin="5"/>
+                            </ScrollViewer>
+                        </StackPanel>
                     </Grid>
                 </TabItem>
 
